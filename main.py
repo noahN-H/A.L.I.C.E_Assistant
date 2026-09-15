@@ -2,14 +2,26 @@ import os
 from anthropic import Anthropic
 from dotenv import load_dotenv
 import json
-from tools import access_files, edit_files, get_weather, search_web, enter_url, tools
+from faster_whisper import WhisperModel
+import sounddevice as sd
+from scipy.io.wavfile import write
+import numpy as np
+from kokoro import KPipeline
+from tools import access_files, edit_files, get_weather, search_web, enter_url, make_folder, tools
+from voice import record_and_transcribe
 
 
+load_dotenv()
 chat = True
 history = []
-load_dotenv()
+
+fs = 44100
+seconds = 3
+model_size = "medium"
+model = WhisperModel(model_size, device = "cpu", compute_type = "int8")
+pipeline = KPipeline(lang_code = "a")
+
 obsidian_vault = r"D:\Obsidian\Knowledge"
-obsidian_dir = os.listdir(obsidian_vault)
 anthropic_client = Anthropic(
     api_key=os.environ.get("ANTHROPIC_API_KEY"),
 )
@@ -19,13 +31,20 @@ with open(os.path.join(obsidian_vault,"startup.md"), "r") as startup:
 
 with open(os.path.join(obsidian_vault,"me.md"), "r") as user_profile:
     read_user_profile = user_profile.read()
+    
+with open(os.path.join(obsidian_vault,"personality.md"), "r") as personality:
+    read_personality = personality.read()
+   
+   
+   
    
 while chat:
-    msg = input()
-    if msg == "sleep":
+    obsidian_dir = os.listdir(obsidian_vault)
+    msg = record_and_transcribe()
+    if len(msg.split()) <= 5 and "sleep" in msg.lower():
         chat = False
         exit_msg = anthropic_client.messages.create(
-            max_tokens = 1024,
+            max_tokens = 4096,
             system = "review and output what you think is relevant in long term memory. Respond with ONLY valid JSON (no other text) in this exact format: a list of objects, each with a 'filename' key and a 'content' key. Example: [{'filename': 'example.md', 'content': ...}]. If nothing is worth saving, respond with an empty list []",
             messages = history + [{"role": "user","content": "review and output what you think is relevant in long term memory"}], 
             model = "claude-sonnet-5",
@@ -47,7 +66,7 @@ while chat:
                     
         break
     
-    if msg == "abort":
+    if len(msg.split()) <= 5 and "abort" in msg.lower():
         break
     
     history.append({"role": "user","content": msg})
@@ -55,7 +74,7 @@ while chat:
     resp = anthropic_client.messages.create(
         max_tokens = 1024,
         tools = tools,
-        system = f"The following is infomation is the relevant startup infomation:\n\n{read_startup}, you can also view files that are in the directory: {obsidian_dir}. infomation about the user can be found here in: {read_user_profile}",
+        system = f"The following is infomation is the relevant startup infomation:\n\n{read_startup}, you can also view files that are in the directory: {obsidian_dir}. infomation about the user can be found here in: {read_user_profile}. Infomation about the system YOU can be found here: {read_personality}, this includes how you respond, how you think, how you behave etc.",
         messages = history,
         model = "claude-sonnet-5",
     )       
@@ -71,7 +90,9 @@ while chat:
                 case "access_files":
                     result = access_files(j.input["filename"])
                 case "edit_files":
-                    result = edit_files(j.input["filename"],j.input["content"], j.input["mode"] )
+                    result = edit_files(j.input["filename"],j.input["content"], j.input["mode"])
+                case "make_folder":
+                    result = make_folder(j.input["foldername"])
                 case "get_weather":
                     result = get_weather(j.input["location"], j.input["unit"])
                 case "search_web":
@@ -97,3 +118,7 @@ while chat:
         if i.type == "text":
             print(i.text)
             history.append({"role": "assistant", "content": i.text})
+            samples = pipeline(i.text, voice = "am_onyx")
+            for gs,  ps, audio in samples:
+                sd.play(audio, samplerate = 24000)
+                sd.wait()

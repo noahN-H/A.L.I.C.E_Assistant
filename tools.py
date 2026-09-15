@@ -25,11 +25,21 @@ def access_files(filename):
 def edit_files(filename, content, mode):
     try:
         if filename != "startup.md":
-            with open(os.path.join(obsidian_vault,filename), mode) as edit_file:
+            with open(os.path.join(obsidian_vault, filename), mode) as edit_file:
                 edit_file.write(content)
             return f"Successfully wrote to {filename} in {mode} mode. Content written: {content}"
+        else:
+            return "Cannot modify startup.md - can only be modified by user"
     except Exception as e:
         return f"could not make or edit file: {filename} in mode: {mode}. Error: {e}"
+    
+def make_folder(foldername):
+    try:
+        newpath = os.path.join("obsidian_vault", foldername)
+        if not os.path.exists(newpath):
+            os.makedirs(newpath)
+    except Exception as e:
+        return f"folder: {foldername} could not be made. Error: {e}"
     
 def get_weather(location, unit):
     try:
@@ -110,6 +120,21 @@ tools = [
                 },
             },
          "required": ["filename", "content", "mode"],
+        }
+    },
+    
+    {
+        "name": "make_folder",
+        "description": "Allows the creation of new folders in the directory with a name that is relevant based on the user and conversation",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "foldername": {
+                    "type": "string",
+                    "description": "The exact foldername that will be created",
+                }
+            },
+            "required": ["foldername"]
         }
     },
     

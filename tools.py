@@ -22,7 +22,7 @@ def access_files(filename):
     except Exception as e:
         return f"file {filename} not found. Files in directory are: {obsidian_dir}. Error: {e}"
     
-def preview_file(filename, mode):
+def read_summary(filename):
     try:
         with open(os.path.join(obsidian_vault, filename), "r") as file_preview:
             return file_preview.readline()
@@ -109,7 +109,7 @@ tools = [
         "name": "read_summary",
         "description": "Reads the first line of a specific file iun the users memory vault. The first line of everyfile contains a summery of that file",
         "input_schema": {
-            "type": "",
+            "type": "object",
             "properties": {
                 "filename": {
                     "type": "string",

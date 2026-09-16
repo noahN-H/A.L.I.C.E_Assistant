@@ -7,7 +7,7 @@ import sounddevice as sd
 from scipy.io.wavfile import write
 import numpy as np
 from kokoro import KPipeline
-from tools import access_files, edit_files, get_weather, search_web, enter_url, make_folder, tools
+from tools import access_files, read_summary, edit_files, get_weather, search_web, enter_url, make_folder, tools
 from voice import record_and_transcribe
 
 
@@ -93,6 +93,8 @@ while chat:
             match j.name:
                 case "access_files":
                     result = access_files(j.input["filename"])
+                case "read_summary":
+                    result = read_summary(j.input["filename"])
                 case "edit_files":
                     result = edit_files(j.input["filename"],j.input["content"], j.input["mode"])
                 case "make_folder":
@@ -122,8 +124,7 @@ while chat:
         if i.type == "text":
             print(i.text)
             history.append({"role": "assistant", "content": i.text})
-            samples = pipeline(i.text, voice = "am_onyx", speed = 1.2, split_pattern = r
-                               "\n+")
-            for gs,  ps, audio in samples:
+            samples = pipeline(i.text, voice = "am_onyx", speed = 1.2)
+            for gs, ps, audio in samples:
                 sd.play(audio, samplerate = 24000)
                 sd.wait()

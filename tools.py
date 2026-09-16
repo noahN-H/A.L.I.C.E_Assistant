@@ -22,6 +22,12 @@ def access_files(filename):
     except Exception as e:
         return f"file {filename} not found. Files in directory are: {obsidian_dir}. Error: {e}"
     
+def preview_file(filename, mode):
+    try:
+        with open(os.path.join(obsidian_vault, filename), "r") as file_preview:
+            return file_preview.readline()
+    except Exception as e:
+        return f"could not load preview. Error: {e}"
 def edit_files(filename, content, mode):
     try:
         if filename != "startup.md":
@@ -100,6 +106,21 @@ tools = [
     },
     
     {
+        "name": "read_summary",
+        "description": "Reads the first line of a specific file iun the users memory vault. The first line of everyfile contains a summery of that file",
+        "input_schema": {
+            "type": "",
+            "properties": {
+                "filename": {
+                    "type": "string",
+                    "description": "The exact filename to read, as it appears in the file index (e.g. 'eeg_project.md').",
+                }
+            },
+            "required": ["filename"]
+        }
+    },
+    
+    {
         "name": "edit_files",
         "description": "Creates and/or edits the contents of a specific file from the user's memory vault, given its filename. Use this when a file mentioned in the file index or not in the index but seems relevant to the current conversation.",
         "input_schema": {
@@ -107,7 +128,7 @@ tools = [
             "properties": {
                 "filename": {
                     "type": "string",
-                    "description": "The exact filename that will either created or the exact filename of the file as it appears in the the file index (e.g. 'eeg_project.md').",
+                    "description": "The exact filename that will either created or the exact filename of the file as it appears in the the file index (e.g. 'eeg_project.md'). Where relevant when content in the note clearly relates to another existing note in the vault using the [[note_name]] syntax",
                 },
                 "content": {
                     "type": "string",

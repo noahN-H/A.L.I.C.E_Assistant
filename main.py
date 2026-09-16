@@ -22,10 +22,13 @@ model = WhisperModel(model_size, device = "cpu", compute_type = "int8")
 pipeline = KPipeline(lang_code = "a")
 
 obsidian_vault = r"D:\Obsidian\Knowledge"
+# initalizes api
 anthropic_client = Anthropic(
     api_key=os.environ.get("ANTHROPIC_API_KEY"),
 )
 
+
+#opens all relevant startup files
 with open(os.path.join(obsidian_vault,"startup.md"), "r") as startup:
     read_startup = startup.read()
 
@@ -37,21 +40,22 @@ with open(os.path.join(obsidian_vault,"personality.md"), "r") as personality:
    
    
    
-   
+# main conversational loop 
 while chat:
     obsidian_dir = os.listdir(obsidian_vault)
     msg = record_and_transcribe()
-    if len(msg.split()) <= 5 and "sleep" in msg.lower():
+    if len(msg.split()) <= 5 and "sleep" in msg.lower(): # used to detect wheather a given message should be used to terminate the conversation or not
         chat = False
+        # used to consolodate the conversation between A.L.I.C.E. and the user
         exit_msg = anthropic_client.messages.create(
             max_tokens = 4096,
-            system = "review and output what you think is relevant in long term memory. Respond with ONLY valid JSON (no other text) in this exact format: a list of objects, each with a 'filename' key and a 'content' key. Example: [{'filename': 'example.md', 'content': ...}]. If nothing is worth saving, respond with an empty list []",
+            system = "review and output what you think is relevant in long term memory. Respond with ONLY valid JSON (no other text) in this exact format: a list of objects, each with a 'filename' key and a 'content' key. Example: [{'filename': 'example.md', 'content': ...}]. If nothing is worth saving, respond with an empty list []. Where relevant use the [[note_name]] syntax to link existing notes together that are also in the vault",
             messages = history + [{"role": "user","content": "review and output what you think is relevant in long term memory"}], 
             model = "claude-sonnet-5",
         )
-        
         for i in exit_msg.content:
             if i.type == "text":
+                #try block used to create a conversation in memory
                 try:
                     enteries = json.loads(i.text)
                     for entry in enteries:
@@ -118,7 +122,8 @@ while chat:
         if i.type == "text":
             print(i.text)
             history.append({"role": "assistant", "content": i.text})
-            samples = pipeline(i.text, voice = "am_onyx")
+            samples = pipeline(i.text, voice = "am_onyx", speed = 1.2, split_pattern = r
+                               "\n+")
             for gs,  ps, audio in samples:
                 sd.play(audio, samplerate = 24000)
                 sd.wait()

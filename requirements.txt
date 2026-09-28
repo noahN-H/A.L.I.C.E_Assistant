@@ -1,0 +1,11 @@
+anthropic
+python-dotenv
+faster-whisper
+sounddevice
+scipy
+numpy
+kokoro
+soundfile
+requests
+geopy
+tavily-python

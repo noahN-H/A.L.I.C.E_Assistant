@@ -1,5 +1,6 @@
 import os
 import json
+import sys
 import requests
 from dotenv import load_dotenv
 from geopy.geocoders import Nominatim
@@ -11,7 +12,9 @@ tavily_client = TavilyClient(
     api_key=os.environ["TAVILY_API_KEY"]
 )
 
-obsidian_vault = r"D:\Obsidian\Knowledge"
+obsidian_vault = os.environ.get("MEMORY_VAULT")
+if obsidian_vault == None:
+    sys.exit("MEMORY VAULT NOT SET - add to your .env")
 obsidian_dir = os.listdir(obsidian_vault)
 
 def access_files(filename):
@@ -41,7 +44,7 @@ def edit_files(filename, content, mode):
     
 def make_folder(foldername):
     try:
-        newpath = os.path.join("obsidian_vault", foldername)
+        newpath = os.path.join(obsidian_vault, foldername)
         if not os.path.exists(newpath):
             os.makedirs(newpath)
     except Exception as e:

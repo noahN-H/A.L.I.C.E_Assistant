@@ -1,6 +1,7 @@
 import os
 from anthropic import Anthropic
 from dotenv import load_dotenv
+import sys
 import json
 from faster_whisper import WhisperModel
 import sounddevice as sd
@@ -21,12 +22,13 @@ model_size = "medium"
 model = WhisperModel(model_size, device = "cpu", compute_type = "int8")
 pipeline = KPipeline(lang_code = "a")
 
-obsidian_vault = r"D:\Obsidian\Knowledge"
-# initalizes api
+# initalizes api and memories
 anthropic_client = Anthropic(
     api_key=os.environ.get("ANTHROPIC_API_KEY"),
 )
-
+obsidian_vault = os.environ.get("MEMORY_VAULT")
+if obsidian_vault == None:
+    sys.exit("MEMORY VAULT NOT SET - add to your .env")
 
 #opens all relevant startup files
 with open(os.path.join(obsidian_vault,"startup.md"), "r") as startup:
@@ -37,9 +39,7 @@ with open(os.path.join(obsidian_vault,"me.md"), "r") as user_profile:
     
 with open(os.path.join(obsidian_vault,"personality.md"), "r") as personality:
     read_personality = personality.read()
-   
-   
-   
+     
 # main conversational loop 
 while chat:
     obsidian_dir = os.listdir(obsidian_vault)
@@ -67,7 +67,6 @@ while chat:
                                 file.write(content)
                 except Exception as e:
                     print(f"Could not load conversation into memory because: {e}")
-                    
         break
     
     if len(msg.split()) <= 5 and "abort" in msg.lower():
